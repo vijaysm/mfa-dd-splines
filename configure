@@ -1,0 +1,9 @@
+#!/bin/sh
+# Update submodules
+git submodule init
+git submodule update
+# Configure DIY library
+cmake diy -Dpython=ON -Dmpi=ON -Dbuild_examples=ON -Dbuild_tests=OFF
+# Install other dependencies
+python -m pip install -e .
+

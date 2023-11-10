@@ -1,0 +1,9 @@
+autograd==1.6.2
+matplotlib==3.8.1
+mpi4py==3.1.5
+numpy==1.26.1
+packaging==23.2
+pyvista==0.42.3
+scipy==1.11.3
+Splipy==1.7.4
+uvw==0.5.2
