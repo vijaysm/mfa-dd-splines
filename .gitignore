@@ -1,0 +1,14 @@
+CMakeCache.txt
+CMakeFiles/
+CTestTestfile.cmake
+DartConfiguration.tcl
+Makefile
+bindings/
+cmake_install.cmake
+diy-config.cmake
+diy-targets.cmake
+examples/
+lib/
+mfa_dd_splines.egg-info/
+setup.template.py
+src/__pycache__/
