@@ -5,7 +5,6 @@ import splipy as sp
 import timeit
 from scipy.interpolate import BSpline
 
-from fnnls import fnnls
 from scipy.optimize import minimize, optimize, least_squares, shgo, lsq_linear, root
 
 # import scipy.sparse.linalg as sla
@@ -387,7 +386,6 @@ class ProblemSolver3D:
             NNLSolver = False
             KrylovSolver = True
             if NNLSolver:
-                # result = fnnls(A, B)  # , P_initial=initSol.reshape(-1)
                 result = least_squares(
                     fun=residual,
                     x0=(initSol + 200).reshape(-1),
