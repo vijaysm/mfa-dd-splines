@@ -14,10 +14,6 @@ from pstats import SortKey
 
 from functools import reduce
 
-#import pandas as pd
-
-## TODO: Add an option to turn off
-
 # Autograd AD impots
 # from autograd import elementwise_grad as egrad
 # import autograd.numpy as np
@@ -81,7 +77,7 @@ augmentSpanSpace = 0
 useDiagonalBlocks = True
 
 relEPS = 5e-5
-fullyPinned = False
+fullyPinned = True
 useAdditiveSchwartz = True
 enforceBounds = False
 alwaysSolveConstrained = False
@@ -357,9 +353,9 @@ if dimension == 1:
         # solution = lambda x: scale * (
         #     np.sinc(coordinates["x"] - 1) + np.sinc(coordinates["x"] + 1)
         # )
-        solution = lambda x: scale * (np.sinc(x + 1) + np.sinc(x - 1))
+        # solution = lambda x: scale * (np.sinc(x + 1) + np.sinc(x - 1))
         # solution = lambda x: scale * (np.sinc(x+1) + np.sinc(2*x) + np.sinc(x-1))
-        # solution = lambda x: scale * (np.sinc(x) + np.sinc(2 * x - 1) + np.sinc(3 * x + 1.5))
+        solution = lambda x: scale * (np.sinc(x) + np.sinc(2 * x - 1) + np.sinc(3 * x + 1.5))
         # solution = lambda x: np.zeros(x.shape)
         # solution[coordinates["x"] <= 0] = 1
         # solution[coordinates["x"] > 0] = -1
@@ -991,14 +987,12 @@ if showplot and useVTKOutput:
             # print("Writing out reference output solution for non-closed form function")
             # solution = diy.mpi.parallel_read_double_data(diy.mpi.MPIComm(), inputFilename, diy.mpi.Bounds([0,0], nPoints), nPoints).reshape(nPoints)
             if dimension == 2:
-                # print("Sol shape: ", nPoints, coordinate_order, Ncomponents)
                 solution = np.fromfile(inputFilename, dtype=DataType).reshape(
                     np.array(
                         [nPoints[0], nPoints[1], Ncomponents],
                         dtype=np.intc,
                     )
                 )
-                # print("Solution: ", solution.shape, solution[:,:,0].shape)
                 if Ncomponents > 1:
                     solVis = magnitude(solution)
                 else:
@@ -1140,8 +1134,6 @@ def WritePVTKFile(iteration):
 
 
 # Write control point data
-
-
 def WritePVTKControlFile(iteration):
     nconstraints = int(degree / 2.0) if not degree % 2 else int((degree + 1) / 2.0)
     # nconstraints=1
@@ -1449,9 +1441,14 @@ class InputControlBlock:
             # axHnd = self.figHnd.gca()
             self.pMK = self.decode(self.controlPointData, self.decodeOpXYZ)
 
-            xl = self.xyzCoordLocal["x"].reshape(self.xyzCoordLocal["x"].shape[0], 1)
+            # RNDer = {"x": [], "y": [], "z": []}
+            # self.problemInterface.compute_derivatives(RNDer, derorder=2)
+            # print(RNDer)
+            # pMKDer = self.decode(self.controlPointData, RNDer)
 
-            plt.subplot(211)
+            xl = self.xyzCoordLocal["x"].reshape(-1)
+
+            ax1 = plt.subplot(311)
             # Plot the control point solution
             coeffs_x = self.basisFunction["x"].greville()
             plt.plot(
@@ -1460,8 +1457,9 @@ class InputControlBlock:
                 linestyle="--",
                 lw=2,
                 color=["r", "g", "b", "y", "c"][cp.gid() % 5],
-                label="Decoded-%d" % (cp.gid() + 1),
+                label="Solution-%d" % (cp.gid() + 1),
             )
+
             plt.plot(
                 coeffs_x,
                 self.controlPointData,
@@ -1471,8 +1469,9 @@ class InputControlBlock:
                 label="Control-%d" % (cp.gid() + 1),
             )
             plt.ylabel("Solution")
-            # plt.xlabel("X")
-            plt.legend(loc="upper left")
+            plt.xlabel("X")
+            ax1.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+            # ax1.set(xlim=(-1, 1), ylim=(-50, 150), autoscale_on=False) # double sinc
 
             # if cp.gid() == 0 and closedFormFunctional:
             #     plt.plot(coordinates["x"], solution(coordinates["x"]), 'b-', ms=5, label='Input')
@@ -1482,7 +1481,7 @@ class InputControlBlock:
                 self.refSolutionLocal.shape[0], 1
             ) - self.pMK.reshape(self.pMK.shape[0], 1)
 
-            plt.subplot(212)
+            ax2 = plt.subplot(312)
             plt.plot(
                 xl,
                 errorDecoded,
@@ -1491,11 +1490,49 @@ class InputControlBlock:
                 linestyle="--",
                 color=["r", "g", "b", "y", "c"][cp.gid() % 5],
                 lw=2,
-                label="Subdomain(%d) Error" % (cp.gid() + 1),
+                label="Error-%d" % (cp.gid() + 1),
             )
             plt.ylabel("Decoded Error")
             plt.xlabel("X")
+            ax2.legend(loc='center left', bbox_to_anchor=(1, 0.5))
             # plt.legend(loc='upper left')
+            # ax1.margins(x=0)
+            # ax2.set(xlim=(-1, 1), ylim=(-0.7, 2.5), autoscale_on=False) # double sinc
+
+            plotDerivatives = True
+            if plotDerivatives:
+                ax3 = plt.subplot(313)
+
+                RNDer = self.problemInterface.first_order_deriv(xl)
+                RN2Der = self.problemInterface.second_order_deriv(xl)
+                print("First order derivative shape: ", RNDer.shape, RN2Der.shape)
+
+                plt.plot(
+                    xl,
+                    RNDer @ self.controlPointData,
+                    linestyle=":",
+                    lw=3,
+                    color=["r", "g", "b", "y", "c"][cp.gid() % 5],
+                    label=r"$\mathcal{C}^{%d}-{%d}$"%(degree-1, cp.gid() + 1),
+                )
+                plt.plot(
+                    xl,
+                    RN2Der @ self.controlPointData,
+                    linestyle="-.",
+                    lw=2,
+                    color=["r", "g", "b", "y", "c"][cp.gid() % 5],
+                    label=r"$\mathcal{C}^{%d}-{%d}$"%(degree-2, cp.gid() + 1),
+                )
+                ax3.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+                plt.xlabel("X")
+                plt.ylabel("Derivatives")
+
+                # ax3.margins(x=0)
+                # ax3.set(xlim=(-1, 1), ylim=(-400, 600), autoscale_on=False) # double sinc
+
+                # ax2.margins(x=0)
+                # plt.xlim(-0.5, 0.5)
+                # plt.ylim(-1, 3)
 
         else:
             if useVTKOutput:

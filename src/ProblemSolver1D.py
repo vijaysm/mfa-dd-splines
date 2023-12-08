@@ -1,6 +1,7 @@
 # import autograd.numpy as np
 import numpy as np
 import splipy as sp
+from numpy import typing as npt
 
 import timeit
 from scipy.interpolate import BSpline
@@ -75,20 +76,74 @@ class ProblemSolver1D:
 
     def decode(self, P, RN):
         if not self.sparseOperators:
+            print(RN["x"].shape, P.shape)
             return RN["x"] @ P
         else:
             RN["x"].multiply(P)
 
-    def compute_derivatives(self, RN, derorder):
+    def _b_spline_deriv_inner(self, spline: BSpline, deriv_basis: npt.NDArray[np.double]) -> npt.NDArray[np.double]:
+        out = np.zeros((deriv_basis.shape[0], deriv_basis.shape[1] - 1))
+
+        for col_index in range(out.shape[1] - 1):
+            scale = spline.t[col_index + spline.k + 1] - spline.t[col_index + 1]
+            if scale != 0:
+                out[:, col_index] = -deriv_basis[:, col_index + 1] / scale
+
+        for col_index in range(1, out.shape[1]):
+            scale = spline.t[col_index + spline.k] - spline.t[col_index]
+            if scale != 0:
+                out[:, col_index] += deriv_basis[:, col_index] / scale
+
+        return spline.k * out
+
+    def _first_order_deriv(self, spline: BSpline, points: npt.NDArray[np.double]) -> npt.NDArray[np.double]:
+        return self._b_spline_deriv_inner(
+            spline=spline, deriv_basis=spline.design_matrix(x=points, t=spline.t, k=spline.k - 1).todense()
+        )
+
+    def first_order_deriv(self, points: npt.NDArray[np.double]) -> npt.NDArray[np.double]:
         bspl = BSpline(
             self.inputCB.knotsAdaptive["x"],
             c=self.inputCB.controlPointData[:],
             k=self.degree,
         )
+        print("Points: ", points.shape, ", k=", bspl.k)
+        return self._b_spline_deriv_inner(
+            spline=bspl, deriv_basis=bspl.design_matrix(x=points, t=bspl.t, k=bspl.k - 1).todense()
+        )
+
+    def second_order_deriv(self, points: npt.NDArray[np.double]) -> npt.NDArray[np.double]:
+        bspl = BSpline(
+            self.inputCB.knotsAdaptive["x"],
+            c=self.inputCB.controlPointData[:],
+            k=self.degree,
+        )
+        deriv_basis = self._first_order_deriv(
+            BSpline(t=bspl.t, k=bspl.k - 1, c=np.zeros(bspl.c.shape[0] + 1)), points=points
+        )
+        return self._b_spline_deriv_inner(spline=bspl, deriv_basis=deriv_basis)
+
+    def compute_derivatives(self, RN, derorder=1):
+        assert(derorder <= self.degree)
+        bspl = BSpline(
+            self.inputCB.knotsAdaptive["x"],
+            c=self.inputCB.controlPointData[:],
+            k=self.degree,
+        )
+        bsplpy = sp.BSplineBasis(
+            order=self.degree + 1, knots=bspl.t
+        )
+        print("Lower order knot: ", self.degree, bsplpy.lower_order(1))
         for dir in ["x"]:
             Nder = bspl.derivative(derorder).design_matrix(
-                self.inputCB.UVW["x"], bspl.t, k=derorder
+                self.inputCB.UVW["x"],
+                # bspl.t[derorder:-derorder],
+                bsplpy.lower_order(derorder),
+                k=self.degree-derorder
             )
+            # Nder = bspl.design_matrix(
+            #     self.inputCB.UVW["x"], bspl.t[derorder:-derorder], k=derorder
+            # )
             RN[dir] = ( Nder / np.sum(Nder, axis=1)[:, np.newaxis] )
 
     def compute_decode_operators(self, RN):
