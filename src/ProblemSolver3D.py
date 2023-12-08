@@ -367,7 +367,6 @@ class ProblemSolver3D:
                 % (self.inputCB.gid, result.message, residual(result.x))
             )
             res = result.x.reshape(initSol.shape)
-            print(self.inputCB.gid, " : sol shape", res.shape)
 
             return res
 
@@ -382,7 +381,7 @@ class ProblemSolver3D:
             )
             # bnds = np.tensordot(np.ones(initSol.shape), [0, 1000], axes=0)
 
-            print("Min and max values of initsol: ", np.min(initSol.min()), np.max(initSol.max()))
+            # print("Min and max values of initsol: ", np.min(initSol.min()), np.max(initSol.max()))
             NNLSolver = False
             KrylovSolver = True
             if NNLSolver:

@@ -76,7 +76,6 @@ class ProblemSolver1D:
 
     def decode(self, P, RN):
         if not self.sparseOperators:
-            print(RN["x"].shape, P.shape)
             return RN["x"] @ P
         else:
             RN["x"].multiply(P)
@@ -107,7 +106,6 @@ class ProblemSolver1D:
             c=self.inputCB.controlPointData[:],
             k=self.degree,
         )
-        print("Points: ", points.shape, ", k=", bspl.k)
         return self._b_spline_deriv_inner(
             spline=bspl, deriv_basis=bspl.design_matrix(x=points, t=bspl.t, k=bspl.k - 1).todense()
         )
@@ -133,7 +131,6 @@ class ProblemSolver1D:
         bsplpy = sp.BSplineBasis(
             order=self.degree + 1, knots=bspl.t
         )
-        print("Lower order knot: ", self.degree, bsplpy.lower_order(1))
         for dir in ["x"]:
             Nder = bspl.derivative(derorder).design_matrix(
                 self.inputCB.UVW["x"],
@@ -204,11 +201,6 @@ class ProblemSolver1D:
                     # print('left: ', nconstraints, -self.degree+nconstraints+loffset,
                     #       Pin[nconstraints], self.boundaryConstraints['left'][-self.degree+nconstraints+loffset])
                     constraintVal = initSol[nconstraints - 1, 0]
-                    print(
-                        (constraintVal * Aoper[:, nconstraints]).shape,
-                        Aoper[:, nconstraints].shape,
-                        Brhs.shape,
-                    )
                     Brhs -= (constraintVal * Aoper[:, nconstraints]).reshape(Brhs.shape)
 
                 for ic in range(nconstraints):
@@ -248,7 +240,6 @@ class ProblemSolver1D:
                     Aoper[-ic - 1, :] = 0.0
                     Aoper[-ic - 1, -ic - 1] = 1.0
 
-        # print(Aoper, Brhs)
         return [Aoper, Brhs]
 
     def residual(self, Pin, printVerbose=False):
@@ -287,7 +278,6 @@ class ProblemSolver1D:
             #     [Aoper, Brhs] = residual_operator_1D(Pin, False, False)
 
             # lu, piv = scipy.linalg.lu_factor(Aoper)
-            # # print(lu, piv)
             # initSol2 = scipy.linalg.lu_solve((lu, piv), Brhs)
 
             residual_nrm_vec = (Brhs - Aoper @ Pin)[lbound:ubound]
@@ -303,7 +293,6 @@ class ProblemSolver1D:
         else:
 
             # New scheme like 2-D
-            # print('Corebounds: ', self.corebounds)
             decoded = self.decode(Pin, self.decodeOpXYZ)
             residual_decoded = (self.refSolutionLocal - decoded) / solutionRange
             residual_decoded2 = residual_decoded[
@@ -453,7 +442,6 @@ class ProblemSolver1D:
                 int(degree / 2.0) if not oddDegree else int((degree + 1) / 2.0)
             )
             loffset = 2 * augmentSpanSpace
-            print("Nconstraints = ", nconstraints, "loffset = ", loffset)
 
             freeBounds[0] = (
                 0

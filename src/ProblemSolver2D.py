@@ -136,13 +136,10 @@ class ProblemSolver2D:
         DD2A = np.einsum("ki,ij->kj", RN["x"], P, optimize=True)
         DD2 = np.einsum("kj,lj->kl", DD2A, RN["y"], optimize=True)
 
-        print(P.shape, RN["x"].shape, RN["y"].shape, DD1.shape)
         # DD2 = np.einsum("lj,ij->il", RN["y"], P)
         # DD2 = np.einsum("ki,il->kl", RN["x"], np.einsum("lj,ij->il", RN["y"], P))
         ### DD2 = np.einsum("kj,lj->kl", RN["y"], np.einsum("li,ij->lj", RN["x"], P))
         # DD3 = np.einsum("il,ik->lk", np.einsum("ij,jl->il", P, RN["y"]), RN["x"])
-
-        print(np.amax(DD1 - DD2))
 
         return DD1
 
@@ -185,7 +182,6 @@ class ProblemSolver2D:
             # XX = np.matmul(
             #         decodeOpXYZ["y"].T, decodeOpXYZ["y"]
             #     )
-            print("Shapes: ", decodeOpXYZ["x"].T.shape, refSolutionLocal.shape, decodeOpXYZ["y"].shape)
             NxTQNy = decodeOpXYZ["x"].T @ refSolutionLocal @ decodeOpXYZ["y"]
             # referenceLSQ = np.matmul(NTNxInv, np.matmul(NxTQNy, NTNyInv))
 
@@ -257,8 +253,6 @@ class ProblemSolver2D:
             # res = sla.solve(np.matmul(decodeOpXYZ["x"].T, decodeOpXYZ["x"]),
             #                 sla.solve(np.matmul(decodeOpXYZ["y"].T, decodeOpXYZ["y"]), NxTQNy, assume_a='pos', transposed=False), assume_a='pos'
             # )
-
-            # print(res[0])
 
             # print ('Max', np.amax(referenceLSQ-res))
 
@@ -627,8 +621,6 @@ class ProblemSolver2D:
     def initialize_solution(
         self, inputCB, idom, initSol, degree, augmentSpanSpace, fullyPinned
     ):
-
-        # print("initSol: ", initSol)
 
         alpha = 0.5  # Between [0, 1.0]
         beta = 0  # Between [0, 0.5]

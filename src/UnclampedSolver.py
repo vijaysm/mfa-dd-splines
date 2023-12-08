@@ -1,6 +1,4 @@
 # coding: utf-8
-# get_ipython().magic(u'matplotlib notebook')
-# %matplotlib notebook
 # S3D: mpiexec -n 10 python UnclampedSolver.py --dimension 2 --problem 4 --degree 6 -n 10 --controlpoints 25 --showplot --aug 6
 import sys
 import math
@@ -14,14 +12,7 @@ from pstats import SortKey
 
 from functools import reduce
 
-# Autograd AD impots
-# from autograd import elementwise_grad as egrad
-# import autograd.numpy as np
 import numpy as np
-
-# from pymoab import core, types
-# from pymoab.scd import ScdInterface
-# from pymoab.hcoord import HomCoord
 
 # SciPY imports
 import scipy
@@ -32,15 +23,9 @@ from scipy import linalg
 from mpi4py import MPI
 import diy
 
-# from numba import jit, vectorize, guvectorize, float64
-
-# from line_profiler import LineProfiler
-
 # Plotting imports
 from matplotlib import pyplot as plt
 from matplotlib import cm
-
-# from pyevtk.hl import gridToVTK
 
 from ProblemSolver1D import ProblemSolver1D
 from ProblemSolver2D import ProblemSolver2D
@@ -308,10 +293,7 @@ L2err = np.zeros(nTotalSubDomains)
 ref_order = np.linspace(0, 3, 3, endpoint=False, dtype=int)
 coordinate_order = ref_order[:dimension]
 
-# globalExtentDict = np.zeros(nTotalSubDomains*2*dimension, dtype='int32')
-# globalExtentDict[cp.gid()*4:cp.gid()*4+4] = extents
 localExtents = {}
-
 
 def interpolate_inputdata(solprofile, Xi, newX, Yi=None, newY=None, Zi=None, newZ=None):
 
@@ -336,7 +318,6 @@ def interpolate_inputdata(solprofile, Xi, newX, Yi=None, newY=None, Zi=None, new
         return interp_multiD((newX, newY, newZ))
 
 
-# def read_problem_parameters():
 coordinates = {"x": None, "y": None, "z": None}
 solution = None
 
@@ -939,30 +920,11 @@ def magnitude(vdata):
         for idim in range(1, Ncomponents):
             gen += vdata[:, :, idim] ** 2
     else:
-        # print(
-        #     "Printing min of each component: ",
-        #     np.min(vdata[:, :, :, 0]),
-        #     np.min(vdata[:, :, :, 1]),
-        #     np.min(vdata[:, :, :, 2]),
-        # )
-        # print(
-        #     "Printing max of each component: ",
-        #     np.max(vdata[:, :, :, 0]),
-        #     np.max(vdata[:, :, :, 1]),
-        #     np.max(vdata[:, :, :, 2]),
-        # )
-        # print("Component data: ", (vdata[-10:,0,-20:,0]), (vdata[-10:,0,-20:,1]), (vdata[-10:,0,-20:,2]))
         gen = vdata[:, :, :, 0] ** 2
         for idim in range(1, Ncomponents):
             gen += vdata[:, :, :, idim] ** 2
-        # print("Printing magnitude: ", (gen[-10:,0,-20:]))
-
-        # gen = vdata[0, :, :, :] ** 2
-        # for idim in range(1, Ncomponents):
-        #     gen += vdata[idim, :, :, :] ** 2
 
     gen = np.sqrt(gen)
-    # print("Printing min/max of magnitude: ", np.min(gen), np.max(gen))
     return gen
 
 
@@ -1505,7 +1467,6 @@ class InputControlBlock:
 
                 RNDer = self.problemInterface.first_order_deriv(xl)
                 RN2Der = self.problemInterface.second_order_deriv(xl)
-                print("First order derivative shape: ", RNDer.shape, RN2Der.shape)
 
                 plt.plot(
                     xl,
